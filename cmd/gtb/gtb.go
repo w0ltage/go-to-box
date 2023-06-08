@@ -7,7 +7,37 @@ import (
   "log"
   "os"
   "strings"
+  "flag"
 )
+
+func main() {
+  hostsPath := "tmp/hosts"
+  content, readResult := readFile(hostsPath)
+
+  // check if file exists or if user have permissions to read it
+  if readResult != nil {
+    fmt.Printf("Error reading hosts: %v\n", readResult)
+    return
+  } else {
+    fmt.Println(content)
+  }
+
+  var tld string
+  flag.StringVar(&tld, "c", "", "Clear all hosts with a specific TLD")
+  flag.Parse()
+  
+  if tld != "" {
+    removeResult := removeDomain(hostsPath, content, tld) 
+
+    if removeResult != nil {
+      fmt.Printf("Error removing domains from hosts: %v\n", removeResult)
+      return
+    } else {
+      fmt.Println("\nDomains removed successfully.")
+    }
+  }
+
+}
 
 func readFile(filePath string) (string, error) {
   content, err := ioutil.ReadFile(filePath)
@@ -48,22 +78,3 @@ func removeDomain(hostsFile, content, substring string) error {
   return nil
 }
 
-func main() {
-  hostsPath := "tmp/hosts"
-  content, readResult := readFile(hostsPath)
-
-  if readResult != nil {
-    fmt.Printf("Error reading hosts: %v\n", readResult)
-    return
-  }
-
-  fmt.Println(content)
-
-  removeResult := removeDomain(hostsPath, content, "htb") 
-  if removeResult != nil {
-    fmt.Printf("Error removing domains from hosts: %v\n", readResult)
-    return
-  }
-
-  fmt.Println("Domains removed successfully.")
-}

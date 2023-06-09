@@ -4,13 +4,17 @@ import (
   "bufio"
   "fmt"
   "io/ioutil"
-  "log"
   "os"
   "strings"
   "flag"
 )
 
 func main() {
+  var tld string
+  var ip string
+  var domain string
+  var joinFlag bool
+  // var domain string
   hostsPath := "tmp/hosts"
   content, readResult := readFile(hostsPath)
 
@@ -18,14 +22,14 @@ func main() {
   if readResult != nil {
     fmt.Printf("Error reading hosts: %v\n", readResult)
     return
-  } else {
-    fmt.Println(content)
-  }
+  } 
 
-  var tld string
   flag.StringVar(&tld, "c", "", "Clear all hosts with a specific TLD")
+  flag.BoolVar(&joinFlag, "j", false, "Join host to hosts file")
+  flag.StringVar(&ip, "a", "", "Domain IP address")
+  flag.StringVar(&domain, "d", "", "Domain name")
   flag.Parse()
-  
+
   if tld != "" {
     removeResult := removeDomain(hostsPath, content, tld) 
 
@@ -34,29 +38,38 @@ func main() {
       return
     } else {
       fmt.Println("\nDomains removed successfully.")
+      return
     }
   }
 
+  if joinFlag && (ip == "" || domain == "") {
+    fmt.Printf("When using -j flag, both -a for IP-address and -d for domain name are required\n\n")
+    flag.PrintDefaults()
+    return
+  } else if joinFlag && (ip != "" || domain != "") {
+    addResult := addDomain(ip, domain, hostsPath)
+
+    if addResult != nil {
+      fmt.Printf("Error adding domains to hosts: %v\n", addResult)
+      return
+    } else {
+      fmt.Println("\nDomain added successfully.")
+      return 
+    }
+  }
+
+  fmt.Printf("Nothing happened. Did you need something?\n\n")
+  flag.PrintDefaults()
 }
 
 func readFile(filePath string) (string, error) {
   content, err := ioutil.ReadFile(filePath)
-
-  if err != nil {
-      log.Fatal(err)
-  }
-
-  return string(content), nil
+  return string(content), err
 }
 
 func removeDomain(hostsFile, content, substring string) error {
-
   // clear hosts file
   hostsOutput, err := os.Create(hostsFile)
-  if err != nil {
-    log.Fatal(err)
-  }
-
   defer hostsOutput.Close()
 
   // iterate over each line in the content
@@ -72,6 +85,28 @@ func removeDomain(hostsFile, content, substring string) error {
   }
 
   if err := scanner.Err(); err != nil {
+		return err
+	}
+
+  return err
+}
+
+func addDomain(ip, domain, hostsPath string) error {
+  // open the hosts file in append mode
+  file, err := os.OpenFile(hostsPath, os.O_APPEND|os.O_WRONLY, 0644)
+  defer file.Close()
+
+  if err != nil {
+    fmt.Println("Error opening file:", err)
+    return err
+  }
+
+  // write the new line to the end of the file
+  line := fmt.Sprintf("%s    %s", ip, domain)
+  _, err = fmt.Fprintln(file, line)
+
+  if err != nil {
+    fmt.Println("Error writing to file:", err)
     return err
   }
 

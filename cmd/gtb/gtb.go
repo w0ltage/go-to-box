@@ -12,14 +12,14 @@ import (
 
 func main() {
     // Initialize flags
-    var tld string
+    var tldFlag string
     var ip string
     var domain string
-    var joinFlag bool
+    var appendFlag bool
     var replaceFlag bool
 
     // Define path to hosts file
-    hostsPath := "/etc/hosts"
+    hostsPath := "tmp/hosts"
 
     // Read contents of hosts file
     content, readResult := readFile(hostsPath)
@@ -29,48 +29,70 @@ func main() {
     }
 
     // Define command line flags
-    flag.StringVar(&tld, "c", "", "Clear all hosts with a specified TLD")
-    flag.BoolVar(&joinFlag, "j", false, "Join host to hosts file")
-    flag.BoolVar(&replaceFlag, "r", false, "Remove all domains with specific TLD to replace them wtih another IP and domain")
-    flag.StringVar(&ip, "a", "", "Domain IP address")
-    flag.StringVar(&domain, "d", "", "Domain name")
+    flag.StringVar(&tldFlag, "rm", "", "Mode to remove all domains with a specified TLD")
+    flag.BoolVar(&appendFlag, "add", false, "Mode to add host to hosts file")
+    flag.BoolVar(&replaceFlag, "re", false, "Mode to remove all domains with specific TLD to replace them wtih another IP and domain")
+    flag.StringVar(&ip, "i", "", "Value for domain IP address")
+    flag.StringVar(&domain, "d", "", "Value for domain name")
+
+    // Custom usage
+    flag.Usage = func() {
+        flagSet := flag.CommandLine
+        fmt.Printf("\nUsage: %s { mode } { argument(s) } \n", "gtb")
+        order := []string{"rm", "add", "re", "i", "d"}
+        for _, name := range order {
+            flag := flagSet.Lookup(name)
+            fmt.Printf("-%s\t%s\n", flag.Name,flag.Usage)
+        }
+        fmt.Printf(
+            "\nThere are only 3 types of commands that you can executed:\n" +
+            "%[1]s -rm htb: Remove all .htb domains from hosts file\n" +
+            "%[1]s -add -i 127.0.0.1 -d localx.com: Add the IP address 127.0.0.1 and the domain localx.com to the end of hosts file\n" +
+            "%[1]s -re -i -rm com -i 172.0.17.88 -d ftp.localx.com: Remove all .com domains and add the IP address 172.0.17.88 with ftp.localx.com\n\n",
+            "gtb")
+    }
+
     flag.Parse()
 
-    // Handle clear flag
-    if tld != "" && !replaceFlag {
-        err := removeDomain(hostsPath, content, tld) 
+    // Handle -rm (remove) flag
+    if tldFlag != "" && !replaceFlag {
+        err := removeDomain(hostsPath, content, tldFlag) 
 
         if err != nil {
-            log.Fatalf("Error removing domains from hosts file: %v", err)
+            log.Printf("Error removing domains from hosts file: %v", err)
+            flag.Usage()
+            os.Exit(1)
         }
-        fmt.Println("\nDomains removed successfully.")
+        fmt.Println("Domains removed successfully.")
         return
     }
 
-    // Handle join flag
-    if joinFlag {
+    // Handle -add flag
+    if appendFlag {
         if ip == "" || domain == "" {
+            log.Println("Both IP address (-i) and domain name (-d) are required when using -add flag")
             flag.Usage()
-            log.Fatal("Both IP address (-a) and domain name (-d) are required when using -j flag")
+            os.Exit(1)
         }
 
         err := addDomain(ip, domain, hostsPath)
         if err != nil {
-            log.Default().Fatalf("Error adding domain to hosts file: %v", err)
+            log.Fatalf("Error adding domain to hosts file: %v", err)
         }
 
-        fmt.Println("\nDomain added successfully")
+        fmt.Println("Domain added successfully")
         return
     }
 
-    // Handle replace flag
+    // Handle -re (replace) flag
     if replaceFlag {
-        if ip == "" || domain == "" || tld == "" {
+        if ip == "" || domain == "" || tldFlag == "" {
+            log.Println("IP address (-i), domain name (-d) and TLD (-rm) are required when using -re flag")
             flag.Usage()
-            log.Fatal("IP address (-a), domain name (-d) and TLD (-c) are required when using -r flag")
+            os.Exit(1)
         }
 
-        err := removeDomain(hostsPath, content, tld)
+        err := removeDomain(hostsPath, content, tldFlag)
         if err != nil {
             log.Fatalf("Error removing domains from hosts file: %v", err)
         }
@@ -80,12 +102,12 @@ func main() {
             log.Fatalf("Error adding domain to hosts file: %v", err)
         }
 
-        fmt.Println("\nDomain replaced successfully")
+        fmt.Println("Domain replaced successfully")
         return
     }
 
     // If no flag is specified, print usage information
-    fmt.Printf("You don't need to go to box?\n\n")
+    fmt.Printf("I don't understand you.\nDon't you need to get into the box?\n\n")
     flag.Usage()
 }
 

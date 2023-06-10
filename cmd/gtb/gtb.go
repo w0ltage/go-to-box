@@ -19,7 +19,7 @@ func main() {
     var replaceFlag bool
 
     // Define path to hosts file
-    hostsPath := "/etc/hosts"
+    hostsPath := "tmp/hosts"
 
     // Read contents of hosts file
     content, readResult := readFile(hostsPath)
@@ -38,17 +38,20 @@ func main() {
     // Custom usage
     flag.Usage = func() {
         flagSet := flag.CommandLine
-        fmt.Printf("\nUsage: %s { mode } { argument(s) } \n", "gtb")
+        fmt.Printf(
+            "\nAdd, remove or replace hosts in the hosts file" +
+            "\nUsage: %s { mode } { argument(s) } \n",
+            "gtb")
         order := []string{"rm", "add", "re", "i", "d"}
         for _, name := range order {
             flag := flagSet.Lookup(name)
             fmt.Printf("-%s\t%s\n", flag.Name,flag.Usage)
         }
         fmt.Printf(
-            "\nThere are only 3 types of commands that you can executed:\n" +
-            "%[1]s -rm htb: Remove all .htb domains from hosts file\n" +
-            "%[1]s -add -i 127.0.0.1 -d localx.com: Add the IP address 127.0.0.1 and the domain localx.com to the end of hosts file\n" +
-            "%[1]s -re -i -rm com -i 172.0.17.88 -d ftp.localx.com: Remove all .com domains and add the IP address 172.0.17.88 with ftp.localx.com\n\n",
+            "\nThere are only 3 types of program execution scenarios:\n" +
+            "%[1]s -rm <tld>                                Remove all <tld> domains from hosts file\n" +
+            "%[1]s -add -i <IP> -d <domain>                 Add <IP> address and <domain>\n" +
+            "%[1]s -re -i -rm <tld> -i <IP> -d <domain>     Remove all <tld> domains and add <IP> with <domain>\n\n",
             "gtb")
     }
 

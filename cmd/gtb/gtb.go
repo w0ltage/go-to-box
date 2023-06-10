@@ -19,7 +19,7 @@ func main() {
     var replaceFlag bool
 
     // Define path to hosts file
-    hostsPath := "tmp/hosts"
+    hostsPath := "/etc/hosts"
 
     // Read contents of hosts file
     content, readResult := readFile(hostsPath)
@@ -75,7 +75,7 @@ func main() {
             os.Exit(1)
         }
 
-        err := addDomain(ip, domain, hostsPath)
+        err := addDomain(hostsPath, ip, domain)
         if err != nil {
             log.Fatalf("Error adding domain to hosts file: %v", err)
         }

@@ -4,7 +4,6 @@ import (
     "bufio"
     "fmt"
     "flag"
-    "io/ioutil"
     "log"
     "os"
     "strings"
@@ -19,7 +18,7 @@ func main() {
     var replaceFlag bool
 
     // Define path to hosts file
-    hostsPath := "tmp/hosts"
+    hostsPath := "/etc/hosts"
 
     // Read contents of hosts file
     content, readResult := readFile(hostsPath)
@@ -116,7 +115,7 @@ func main() {
 
 // readFile reads the contents of a file and returns it as a string
 func readFile(filePath string) (string, error) {
-    content, err := ioutil.ReadFile(filePath)
+    content, err := os.ReadFile(filePath)
     return string(content), err
 }
 

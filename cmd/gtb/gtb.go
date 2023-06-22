@@ -1,47 +1,48 @@
 package main
 
 import (
-    "bufio"
-    "fmt"
-    "flag"
-    "log"
-    "os"
-    "strings"
+	"bufio"
+	"flag"
+	"fmt"
+	"log"
+	"os"
+	"strings"
 )
 
 func main() {
     // Initialize flags
-    var tldFlag string
-    var ip string
-    var domain string
-    var appendFlag bool
-    var replaceFlag bool
-
-    // Define path to hosts file
-    hostsPath := "/etc/hosts"
-
-    // Read contents of hosts file
-    content, readResult := readFile(hostsPath)
-    if readResult != nil {
-        fmt.Printf("Error reading hosts: %v\n", readResult)
-        return
-    }
+    var (
+        hostsPath string
+        tldFlag string
+        ip string
+        domain string
+        appendFlag bool
+        replaceFlag bool
+    )
 
     // Define command line flags
+    flag.StringVar(&hostsPath, "file", "/etc/hosts", "Path to hosts file")
     flag.StringVar(&tldFlag, "rm", "", "Mode to remove all domains with a specified TLD")
     flag.BoolVar(&appendFlag, "add", false, "Mode to add host to hosts file")
     flag.BoolVar(&replaceFlag, "re", false, "Mode to remove all domains with specific TLD to replace them wtih another IP and domain")
     flag.StringVar(&ip, "i", "", "Value for domain IP address")
     flag.StringVar(&domain, "d", "", "Value for domain name")
 
+    // Read contents of hosts file
+    content, readResult := readFile(hostsPath)
+    if readResult != nil {
+        log.Printf("Error reading hosts: %v\n", readResult)
+        return
+    }
+
     // Custom usage
     flag.Usage = func() {
         flagSet := flag.CommandLine
         fmt.Printf(
-            "\nAdd, remove or replace hosts in the hosts file" +
+            "Add, remove or replace hosts in the hosts file" +
             "\nUsage: %s { mode } { argument(s) } \n",
             "gtb")
-        order := []string{"rm", "add", "re", "i", "d"}
+        order := []string{"file", "rm", "add", "re", "i", "d"}
         for _, name := range order {
             flag := flagSet.Lookup(name)
             fmt.Printf("-%s\t%s\n", flag.Name,flag.Usage)
@@ -65,7 +66,7 @@ func main() {
             flag.Usage()
             os.Exit(1)
         }
-        fmt.Println("Domains removed successfully.")
+        log.Printf("%q domains removed successfully", tldFlag)
         return
     }
 
@@ -82,7 +83,7 @@ func main() {
             log.Fatalf("Error adding domain to hosts file: %v", err)
         }
 
-        fmt.Println("Domain added successfully")
+        log.Printf("Domain %q with IP %q added successfully", domain, ip)
         return
     }
 
@@ -104,12 +105,12 @@ func main() {
             log.Fatalf("Error adding domain to hosts file: %v", err)
         }
 
-        fmt.Println("Domain replaced successfully")
+        log.Printf("Domain %q with IP %q successfully replaced %q domains", domain, ip, tldFlag)
         return
     }
 
     // If no flag is specified, print usage information
-    fmt.Printf("I don't understand you.\nDon't you need to get into the box?\n\n")
+    log.Printf("I don't understand you.\nDon't you need to get into the box?\n\n")
     flag.Usage()
 }
 
